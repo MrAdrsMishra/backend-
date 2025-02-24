@@ -24,7 +24,7 @@ const userSchema =new Schema(
       index: true,
       trim: true,
     },
-    avtar: {
+    avatar: {
       type: String, // cloudnary service
       required: true,
     },
@@ -55,7 +55,7 @@ userSchema.pre("save", async function (next){
   if(!this.isModified("password"))return next();
 
   // if ask to modified
-  this.password = bcrypt.hash(this.password,10)
+  this.password =await bcrypt.hash(this.password,10)
   next()
 })
 
