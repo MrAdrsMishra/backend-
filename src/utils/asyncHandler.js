@@ -1,5 +1,4 @@
 ///use either this try catch method or above promise methode
-
 const asyncHandler =  (RequestHandeler)=>async (req,res,next)=>{
     try {
         await RequestHandeler(req,res,next)
