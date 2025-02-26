@@ -118,11 +118,16 @@ const loginUser = asyncHandler( async (req,res)=>{
   // find the user
   // access and refresh token
   // send cookie
+
+
+  // get data
   const {email,username,password} = req.body
 
+  // check for username and email availabe in body
   if(!username || !email){
     throw new ApiError(400,"username or email is required")
   }
+  // check for duplicacy in database
   const user = await User.findOne(
     {
       $or:[{email},{username}]
@@ -131,19 +136,22 @@ const loginUser = asyncHandler( async (req,res)=>{
   if(!user){
     throw new ApiError(404,"user does not exist")
   }
+  // check if password is correct
   const isPasswordValid = await user.isPasswordCorrect(password)
   if(!isPasswordValid){
     throw new ApiError(401,"Invalid user credentials")
   }
+  // generaate accesstoken and refreshToken for logged user
   const {accessToken,refreshToken } =  generateAccessAndRefreshTokens(user._id)
 
   const loggedUser = User.findById(user._id).select("-password -refreshToken")
 
+  // adding options for preventing the modification on cookie by frontend
   const options={
     httpOnly:true,
     secure:true
   }
-
+ // returning the response
   return res
   .status(200)
   .cookie("accessToken",accessToken,options)
@@ -151,6 +159,7 @@ const loginUser = asyncHandler( async (req,res)=>{
   .json({
     status:200,
    data: {
+    user: loggedUser,
       accessToken,
       refreshToken
     },
@@ -158,7 +167,34 @@ const loginUser = asyncHandler( async (req,res)=>{
   })
 
 })
+const logoutUser = asyncHandler(async(req,res,next)=>{
+  await User.findByIdAndUpdate(
+    res.user._id,
+    {
+      $set:{
+        refreshToken:undefined
+      }
+    },
+    {
+      new:true
+    }
+  )
+  const options={
+    httpOnly:true,
+    secure:true
+  }
+  return res
+  .status(200)
+  .cookies("accessToken",options)
+  .cookies("refreshToken",options)
+  .json(
+    new ApiResponse(
+      200,{},"user logged out successfully"
+    )
+  )
+})
 export { 
   registerUser,
-  loginUser
+  loginUser,
+  logoutUser
 };

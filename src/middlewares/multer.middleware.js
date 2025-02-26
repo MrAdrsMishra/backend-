@@ -11,3 +11,4 @@ const storage = multer.diskStorage({
 export const upload = multer({
     storage,
 })  
+// here in destination req and files is not getting used we can write "_" in place of them denoting "_will not be used_"
