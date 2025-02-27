@@ -11,7 +11,7 @@ const uploadOnCloudinary = async (localFilePath)=>{
     try {
         // localFIlePath is the path of local server where the file is stored after taken from the user
         if(!localFilePath) return null;
-    const response= await cloudinary.uploader.upload(localFilePath,{
+    const response = await cloudinary.uploader.upload(localFilePath,{
             resource_type:"auto"
         })
         // unlink for not stored on local server 

@@ -1,11 +1,11 @@
 ///use either this try catch method or above promise methode
-const asyncHandler =  (RequestHandeler)=>async (req,res,next)=>{
+const asyncHandler =  (RequestHandeler)=>async (req,res)=>{
     try {
-        await RequestHandeler(req,res,next)
+        return await RequestHandeler(req,res)
     } catch (error) {
-        res.status(error.code || 500).json({
+        res.status(300).json({
             succes:false,
-            message:error.message
+            message:"asyncHandler"
         })
     }
 }
