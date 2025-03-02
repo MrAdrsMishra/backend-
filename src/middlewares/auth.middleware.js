@@ -7,21 +7,23 @@ import jwt from "jsonwebtoken"
 const verifyJwt = asyncHandler(async (req, res, next) => {
   try {
     // getting token from cookies stored in local storage
-    const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")
-
+    const token = req.cookies?.accessToken 
+    // || req.header("Authorization")?.replace("Bearer ","")
+console.log(req.cookies)
+console.log("here is extracted token: ",token)
     if(!token){
         throw new ApiError(401,"Unauthorized access")
     }
     // for decoding the token we have the right access_token_secret key after that we get the accessToken 
     const decodedToken = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
     // accessToken containes the id and other information we search user by this id
-    const user = User.findById(decodedToken?._id).select("-password -refreshToken")
+    const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
 
     if(!user){
       throw new ApiError(401,"Invalid access token")
     }
     // and now returns the user information 
-    res.user = user
+    req.user = user
     next()
   } catch (error) {
     throw new ApiError(401,error.message || "Invalid user access")
