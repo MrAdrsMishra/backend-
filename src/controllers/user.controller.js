@@ -309,6 +309,30 @@ const updateUserDetails = asyncHandler(async(req,res)=>{
     new ApiResponse(200,updatedUser,"user details updated successfully")
   )
 })
+// needs to be done
+const updateFiles = asyncHandler(async(req,res)=>{
+
+})
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+  const {username} = req.params 
+  if(!username?.trim()){
+    throw new ApiError(400,"username is missing")
+  }
+  const channel = asyncHandler(async(req,res)=>{
+   await User.aggregate[
+     {
+       $match:{
+         username: username?.toLowerCase()
+       }
+     },
+     {
+       $lookup:{
+        from:"subscriptions"
+       }
+     }
+   ]
+  })
+})
 export { 
   registerUser,
    loginUser, 
