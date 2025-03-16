@@ -244,4 +244,53 @@ const RefreshAccessToken = asyncHandler(async (req,res)=>{
   throw new ApiError(401,error.message || "invalid refresh token")
  }
 })
-export { registerUser, loginUser, logoutUser,RefreshAccessToken };
+
+const changePassword = asyncHandler(async(req,res)=>{
+  const {oldPassword,newPassword} = req.body
+  
+  const user = await User.findById(req.user?._id)
+  const isPasswordCorrecct = await user.isPasswordCorrecct(oldPassword)
+  if(!isPasswordCorrecct){
+    throw new ApiError(400,"Invalid old-password")
+  }
+  user.password = newPassword
+  await user.save({validateBeforeSave:false})
+  return res.
+    status(201)
+    .json(
+      new ApiResponse(201,{},"password chenged successfully")
+    )
+})
+const updateUserDetails = asyncHandler(async(req,res)=>{
+  const {fullName,email} = req.body
+
+  if(!(fullName || email)){
+    throw new ApiError(404,"invalid details provided")
+  }
+  console.log(fullName,email)
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set:{
+        fullName, email
+      }
+    },
+    {
+      new:true
+    }
+  )
+  console.log(updatedUser)
+  return res
+  .status(200)
+  .json(
+    new ApiResponse(200,updatedUser,"user details updated successfully")
+  )
+})
+export { 
+  registerUser,
+   loginUser, 
+   logoutUser,
+   RefreshAccessToken,
+   changePassword,
+   updateUserDetails,
+   };
