@@ -184,13 +184,11 @@ const loginUser = asyncHandler(async (req, res) => {
       )
     );
 });
-const getCurrentUser = asyncHandler(async(req,res)=>{
+const getCurrentUser = asyncHandler(async (req, res) => {
   return res
-  .status(200)
-  .json(
-    new ApiResponse(200,req.user,"user details recieved ")
-  )
-})
+    .status(200)
+    .json(new ApiResponse(200, req.user, "user details recieved "));
+});
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
@@ -213,132 +211,190 @@ const logoutUser = asyncHandler(async (req, res) => {
     .cookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "user logged out successfully"));
 });
-const RefreshAccessToken = asyncHandler(async (req,res)=>{
- try {
-   const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
- 
-   if(!incomingRefreshToken){
-     throw new ApiError(401,"Unauthorized access")
-   }
-   
-   const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
-   if(!decodedToken){
-     throw new ApiError(401,"Unauthorized access")
-   }
-   const user = await User.findById(decodedToken?._id)
-   if(!user){
-     throw new ApiError(401,"Invalid refresh Token")
-   }
-   if(incomingRefreshToken !== user?.refreshToken){
-     throw new ApiError(401,"Refresh Token is expired or used")
-   }
- 
-   const {accessToken,newRefreshToken} = await generateAccessAndRefreshTokens(user._id)
-   const options = {
-     httpOnly:true,
-     secure:true
-   }
-   return res
-   .status(200)
-   .cookie("accessToken",accessToken,options)
-   .cookie("refreshToken",newRefreshToken,options)
-   .json(
-      new ApiResponse(200,{accessToken,newRefreshToken,},"access token granted successfully")
-   )
- 
- } catch (error) {
-  throw new ApiError(401,error.message || "invalid refresh token")
- }
-})
+const RefreshAccessToken = asyncHandler(async (req, res) => {
+  try {
+    const incomingRefreshToken =
+      req.cookie.refreshToken || req.body.refreshToken;
 
-const changePassword = asyncHandler(async(req, res) => {
-  const {oldPassword, newPassword} = req.body
+    if (!incomingRefreshToken) {
+      throw new ApiError(401, "Unauthorized access");
+    }
 
-  if(!oldPassword || !newPassword){
-    throw new ApiError(409, "Both old and new password is necessary")
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+    if (!decodedToken) {
+      throw new ApiError(401, "Unauthorized access");
+    }
+    const user = await User.findById(decodedToken?._id);
+    if (!user) {
+      throw new ApiError(401, "Invalid refresh Token");
+    }
+    if (incomingRefreshToken !== user?.refreshToken) {
+      throw new ApiError(401, "Refresh Token is expired or used");
+    }
+
+    const { accessToken, newRefreshToken } =
+      await generateAccessAndRefreshTokens(user._id);
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", newRefreshToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { accessToken, newRefreshToken },
+          "access token granted successfully"
+        )
+      );
+  } catch (error) {
+    throw new ApiError(401, error.message || "invalid refresh token");
+  }
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  if (!oldPassword || !newPassword) {
+    throw new ApiError(409, "Both old and new password is necessary");
   }
 
   // Check if req.user exists first
   if (!req.user?._id) {
-    throw new ApiError(401, "Unauthorized - User not authenticated")
+    throw new ApiError(401, "Unauthorized - User not authenticated");
   }
 
-  const currentUser = await User.findById(req.user._id)
-  
+  const currentUser = await User.findById(req.user._id);
+
   // Check if user was found
   if (!currentUser) {
-    throw new ApiError(404, "User not found")
+    throw new ApiError(404, "User not found");
   }
 
-  const checkPassword = await currentUser.isPasswordCorrect(oldPassword)
-  if(!checkPassword){
-    throw new ApiError(400, "Invalid old password")
+  const checkPassword = await currentUser.isPasswordCorrect(oldPassword);
+  if (!checkPassword) {
+    throw new ApiError(400, "Invalid old password");
   }
 
-  currentUser.password = newPassword
-  await currentUser.save({validateBeforeSave: false})
-  
+  currentUser.password = newPassword;
+  await currentUser.save({ validateBeforeSave: false });
+
   return res
     .status(201)
-    .json(
-      new ApiResponse(201, currentUser, "password changed successfully")
-    )
-})
-const updateUserDetails = asyncHandler(async(req,res)=>{
-  const {fullName,email} = req.body
+    .json(new ApiResponse(201, currentUser, "password changed successfully"));
+});
+const updateUserDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
 
-  if(!(fullName || email)){
-    throw new ApiError(404,"invalid details provided")
+  if (!(fullName || email)) {
+    throw new ApiError(404, "invalid details provided");
   }
-  console.log(fullName,email)
+  console.log(fullName, email);
   const updatedUser = await User.findByIdAndUpdate(
     req.user?._id,
     {
-      $set:{
-        fullName, email
-      }
+      $set: {
+        fullName,
+        email,
+      },
     },
     {
-      new:true
+      new: true,
     }
-  )
-  console.log(updatedUser)
+  );
+  console.log(updatedUser);
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedUser, "user details updated successfully")
+    );
+});
+// needs to be done
+const updateFiles = asyncHandler(async (req, res) => {
+
+});
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+  if (!username?.trim()) {
+    throw new ApiError(400, "username is missing");
+  }
+  const channel = asyncHandler(async (req, res) => {
+    await User.aggregate[
+      // match the username where whose profile i want to get 
+      ({
+        $match: {
+          username: username?.toLowerCase(),
+        },
+      },
+      // filter the subscriber details 
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers",
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscribedTo",
+        },
+      },
+      {
+        $addFields: {
+          subscribersCount: {
+            $size: "$subscribers",
+          },
+          channelSubscribedToCount: {
+            $size: "$subscribedTo",
+          },
+          isSubscribed: {
+            $cond: {
+              if: {
+                $in: [req.user?._id, "$subscribers.subscriber"],
+              },
+              then: true,
+              else: false,
+            },
+          },
+        },
+        $project: {
+          fullName: 1,
+          username: 1,
+          subscribersCount: 1,
+          channelSubscribedToCount: 1,
+          avatar: 1,
+          coverImage: 1,
+          email: 1,
+          isSubscribed: 1,
+        },
+      }
+  )];
+  });
+  if(!channel?.length){
+    throw new ApiError(404,"channel does not exist")
+  }
   return res
   .status(200)
   .json(
-    new ApiResponse(200,updatedUser,"user details updated successfully")
+    new ApiResponse(200,channel[0],"User cahnnel fetched succfully")
   )
-})
-// needs to be done
-const updateFiles = asyncHandler(async(req,res)=>{
-
-})
-const getUserChannelProfile = asyncHandler(async(req,res)=>{
-  const {username} = req.params 
-  if(!username?.trim()){
-    throw new ApiError(400,"username is missing")
-  }
-  const channel = asyncHandler(async(req,res)=>{
-   await User.aggregate[
-     {
-       $match:{
-         username: username?.toLowerCase()
-       }
-     },
-     {
-       $lookup:{
-        from:"subscriptions"
-       }
-     }
-   ]
-  })
-})
-export { 
-  registerUser,
-   loginUser, 
-   logoutUser,
-   RefreshAccessToken,
-   changePassword,
-   updateUserDetails,
-   getCurrentUser
-   };
+});
+export {
+  registerUser, 
+  loginUser,
+  logoutUser,
+  RefreshAccessToken,
+  changePassword,
+  updateUserDetails,
+  getCurrentUser,
+  getUserChannelProfile,
+};
